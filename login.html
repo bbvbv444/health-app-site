@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In</title>
+  <link rel="stylesheet" href="/shared/style.css">
+  <style>
+    #content { max-width: 400px; margin: 40px auto; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .toggle { text-align: center; margin-top: 16px; color: #9aa0a6; font-size: 14px; }
+    .toggle a { color: #4ade80; cursor: pointer; }
+    .error { color: #ef4444; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
+    input { width: 100%; padding: 12px; margin-bottom: 12px; background: #1a1d23; border: 1px solid #2a2e36; border-radius: 10px; color: #e8eaed; font-size: 15px; }
+    label { display: block; font-size: 13px; color: #9aa0a6; margin-bottom: 6px; }
+    button { width: 100%; padding: 12px; background: #4ade80; color: #000; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    body { background: #0f1115; color: #e8eaed; font-family: -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="content">
+    <h1 id="title">Sign In</h1>
+    <div id="error" class="error"></div>
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button onclick="submit()" id="submitBtn">Sign In</button>
+    <div class="toggle">
+      <span id="toggleText">Don't have an account?</span>
+      <a onclick="toggleMode()" id="toggleLink">Sign up</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/shared/supabase.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script>
+    let mode = 'signin';
+    function toggleMode() {
+      mode = mode === 'signin' ? 'signup' : 'signin';
+      document.getElementById('title').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
+      document.getElementById('submitBtn').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
+      document.getElementById('toggleText').textContent = mode === 'signin' ? "Don't have an account?" : 'Already have an account?';
+      document.getElementById('toggleLink').textContent = mode === 'signin' ? 'Sign up' : 'Sign in';
+    }
+    async function submit() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl = document.getElementById('error');
+      errEl.textContent = '';
+      if (!email || !password) { errEl.textContent = 'Enter email and password.'; return; }
+      const fn = mode === 'signin' ? signIn : signUp;
+      const { error } = await fn(email, password);
+      if (error) { errEl.textContent = error.message; return; }
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
