@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Reminder</title>
+  <link rel="stylesheet" href="/shared/style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Add Reminder</h1>
+    <button class="icon-btn" onclick="location.href='/schedule.html'">✕</button>
+  </header>
+
+  <main id="content">
+    <label>Type</label>
+    <select id="type">
+      <option value="medication">💊 Medication</option>
+      <option value="eating">🍽️ Eating</option>
+      <option value="drinking">💧 Drinking</option>
+    </select>
+
+    <label>Title</label>
+    <input type="text" id="title" placeholder="e.g. Lisinopril 10mg / Breakfast / Water">
+
+    <label>Time</label>
+    <input type="time" id="remindAt" value="08:00">
+
+    <label>Notes (optional)</label>
+    <input type="text" id="notes" placeholder="e.g. Take with food">
+
+    <button onclick="save()" id="saveBtn">Save Reminder</button>
+    <div id="error" style="color: var(--danger); margin-top: 12px; font-size: 13px;"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/shared/supabase.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script>
+    async function save() {
+      const user = await getCurrentUser();
+      if (!user) { location.href = '/login.html'; return; }
+
+      const type = document.getElementById('type').value;
+      const title = document.getElementById('title').value.trim();
+      const remind_at = document.getElementById('remindAt').value;
+      const notes = document.getElementById('notes').value.trim();
+
+      if (!title) {
+        document.getElementById('error').textContent = 'Enter a title.';
+        return;
+      }
+      if (!remind_at) {
+        document.getElementById('error').textContent = 'Pick a time.';
+        return;
+      }
+
+      const { error } = await supabaseClient.from('reminders').insert({
+        user_id: user.id,
+        type, title, remind_at, notes, days: 'daily', active: true
+      });
+
+      if (error) {
+        document.getElementById('error').textContent = error.message;
+        return;
+      }
+
+      location.href = '/schedule.html';
+    }
+  </script>
+</body>
+</html>
