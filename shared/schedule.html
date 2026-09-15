@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule</title>
+  <link rel="stylesheet" href="/shared/style.css">
+  <style>
+    .reminder-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .reminder-card.due {
+      border-color: var(--accent);
+      background: rgba(74, 222, 128, 0.08);
+    }
+    .reminder-info { display: flex; flex-direction: column; gap: 4px; }
+    .reminder-time { font-size: 20px; font-weight: 600; }
+    .reminder-title { font-size: 14px; color: var(--muted); }
+    .reminder-type { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .type-medication { color: #60a5fa; }
+    .type-eating { color: #f59e0b; }
+    .type-drinking { color: #22d3ee; }
+    .delete-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      width: auto;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Schedule</h1>
+    <button class="icon-btn" onclick="location.href='/schedule-add.html'">➕</button>
+  </header>
+
+  <main id="content">
+    <div id="notLoggedIn" class="hidden">
+      <p>Please <a href="/login.html">sign in</a> to see your schedule.</p>
+    </div>
+
+    <div id="scheduleView" class="hidden">
+      <div id="dueSection"></div>
+      <h2>Today's Schedule</h2>
+      <div id="todayList"></div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/"><span>🏠</span><small>Home</small></a>
+    <a href="/health/"><span>🩺</span><small>Health</small></a>
+    <a href="/schedule.html" class="active"><span>⏰</span><small>Schedule</small></a>
+    <a href="/habits/"><span>✅</span><small>Habits</small></a>
+    <a href="/profile.html"><span>👤</span><small>Profile</small></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/shared/supabase.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script>
+    let allReminders = [];
+
+    (async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        document.getElementById('notLoggedIn').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('scheduleView').classList.remove('hidden');
+      await loadReminders(user.id);
+    })();
+
+    async function loadReminders(userId) {
+      const { data } = await supabaseClient
+        .from('reminders')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .order('remind_at', { ascending: true });
+
+      allReminders = data || [];
+      renderSchedule();
+    }
+
+    function renderSchedule() {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const due = allReminders.filter(r => {
+        const [h, m] = r.remind_at.split(':').map(Number);
+        const mins = h * 60 + m;
+        return Math.abs(mins - nowMinutes) <= 30;
+      });
+
+      const dueSection = document.getElementById('dueSection');
+      if (due.length > 0) {
+        dueSection.innerHTML = `
+          <h2 style="color: var(--accent);">⏰ Due Now</h2>
+          ${due.map(r => `
+            <div class="reminder-card due">
+              <div class="reminder-info">
+                <span class="reminder-time">${formatTime(r.remind_at)}</span>
+                <span class="reminder-title">${r.title}</span>
+              </div>
+            </div>
+          `).join('')}
+        `;
+      } else {
+        dueSection.innerHTML = '';
+      }
+
+      const list = document.getElementById('todayList');
+      if (allReminders.length === 0) {
+        list.innerHTML = '<p style="color: var(--muted);">No reminders yet. Tap ➕ to add one.</p>';
+      } else {
+        list.innerHTML = allReminders.map(r => `
+          <div class="reminder-card">
+            <div class="reminder-info">
+              <span class="reminder-time">${formatTime(r.remind_at)}</span>
+              <span class="reminder-title">${r.title}</span>
+              <span class="reminder-type type-${r.type}">${r.type}</span>
+            </div>
+            <button class="delete-btn" onclick="deleteReminder(${r.id})">✕</button>
+          </div>
+        `).join('');
+      }
+    }
+
+    function formatTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 || 12;
+      return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    async function deleteReminder(id) {
+      if (!confirm('Delete this reminder?')) return;
+      await supabaseClient.from('reminders').delete().eq('id', id);
+      allReminders = allReminders.filter(r => r.id !== id);
+      renderSchedule();
+    }
+
+    setInterval(async () => {
+      const user = await getCurrentUser();
+      if (user) await loadReminders(user.id);
+    }, 60000);
+  </script>
+</body>
+</html>
