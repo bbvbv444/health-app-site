@@ -3,66 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In</title>
+  <title>Profile</title>
   <link rel="stylesheet" href="/shared/style.css">
-  <style>
-    #content { max-width: 400px; margin: 40px auto; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; }
-    .toggle { text-align: center; margin-top: 16px; color: var(--muted); font-size: 14px; }
-    .toggle a { color: var(--accent); cursor: pointer; }
-    .error { color: var(--danger); font-size: 13px; margin-bottom: 12px; min-height: 18px; }
-  </style>
 </head>
 <body>
-  <div id="content">
-    <h1 id="title">Sign In</h1>
-    <div id="error" class="error"></div>
-    <label>Email</label>
-    <input type="email" id="email" placeholder="you@example.com">
-    <label>Password</label>
-    <input type="password" id="password" placeholder="••••••••">
-    <button onclick="submit()" id="submitBtn">Sign In</button>
-    <div class="toggle">
-      <span id="toggleText">Don't have an account?</span>
-      <a onclick="toggleMode()" id="toggleLink">Sign up</a>
+  <header class="top-bar">
+    <h1>Profile</h1>
+  </header>
+
+  <main id="content">
+    <div class="snap-card" style="margin-bottom: 20px;">
+      <span class="snap-label">Signed in as</span>
+      <span class="snap-value" id="userEmail" style="font-size: 16px;">—</span>
     </div>
-  </div>
+
+    <button onclick="signOut()" style="background: var(--danger); color: white;">Sign Out</button>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/"><span>🏠</span><small>Home</small></a>
+    <a href="/health/"><span>🩺</span><small>Health</small></a>
+    <a href="/schedule.html"><span>⏰</span><small>Schedule</small></a>
+    <a href="/habits/"><span>✅</span><small>Habits</small></a>
+    <a href="/profile.html" class="active"><span>👤</span><small>Profile</small></a>
+  </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/shared/supabase.js"></script>
   <script src="/shared/auth.js"></script>
   <script>
-    let mode = 'signin';
-
-    function toggleMode() {
-      mode = mode === 'signin' ? 'signup' : 'signin';
-      document.getElementById('title').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
-      document.getElementById('submitBtn').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
-      document.getElementById('toggleText').textContent = mode === 'signin' ? "Don't have an account?" : 'Already have an account?';
-      document.getElementById('toggleLink').textContent = mode === 'signin' ? 'Sign up' : 'Sign in';
-    }
-
-    async function submit() {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const errEl = document.getElementById('error');
-      errEl.textContent = '';
-
-      if (!email || !password) {
-        errEl.textContent = 'Enter email and password.';
-        return;
-      }
-
-      const fn = mode === 'signin' ? signIn : signUp;
-      const { error } = await fn(email, password);
-
-      if (error) {
-        errEl.textContent = error.message;
-        return;
-      }
-
-      window.location.href = '/';
-    }
+    (async () => {
+      const user = await getCurrentUser();
+      if (!user) { location.href = '/login.html'; return; }
+      document.getElementById('userEmail').textContent = user.email || user.phone || 'User';
+    })();
   </script>
 </body>
 </html>
