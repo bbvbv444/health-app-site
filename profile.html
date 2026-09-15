@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile</title>
+  <link rel="stylesheet" href="/shared/style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Profile</h1>
+  </header>
+
+  <main id="content">
+    <div class="snap-card" style="margin-bottom: 20px;">
+      <span class="snap-label">Signed in as</span>
+      <span class="snap-value" id="userEmail" style="font-size: 16px;">—</span>
+    </div>
+
+    <button onclick="signOut()" style="background: var(--danger); color: white;">Sign Out</button>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/"><span>🏠</span><small>Home</small></a>
+    <a href="/health/"><span>🩺</span><small>Health</small></a>
+    <a href="/habits/"><span>✅</span><small>Habits</small></a>
+    <a href="/meds/"><span>💊</span><small>Meds</small></a>
+    <a href="/profile.html" class="active"><span>👤</span><small>Profile</small></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/shared/supabase.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script>
+    (async () => {
+      const user = await getCurrentUser();
+      if (!user) { location.href = '/login.html'; return; }
+      document.getElementById('userEmail').textContent = user.email || user.phone || 'User';
+    })();
+  </script>
+</body>
+</html>
