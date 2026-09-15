@@ -1,11 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Health Tracker</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Tracker</title>
+  <link rel="stylesheet" href="/shared/style.css">
 </head>
 <body>
-  <h1>Health Tracker</h1>
-  <p>Working! <a href="/login.html">Sign in</a></p>
+  <header class="top-bar">
+    <h1>Health Tracker</h1>
+    <button id="profileBtn" class="icon-btn" onclick="location.href='/profile.html'">👤</button>
+  </header>
+
+  <main id="content">
+    <div id="notLoggedIn" class="hidden">
+      <h2>Welcome</h2>
+      <p>Sign in to start tracking your health.</p>
+      <button onclick="location.href='/login.html'">Sign In</button>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <h2>Today's Snapshot</h2>
+      <div class="snapshot-grid" id="snapshotGrid"></div>
+
+      <h2>Quick Actions</h2>
+      <div class="quick-actions">
+        <a href="/health/bp.html" class="action-card"><span>🩸</span><span>Log BP</span></a>
+        <a href="/health/sugar.html" class="action-card"><span>🍬</span><span>Log Sugar</span></a>
+        <a href="/health/weight.html" class="action-card"><span>⚖️</span><span>Log Weight</span></a>
+        <a href="/health/water.html" class="action-card"><span>💧</span><span>Log Water</span></a>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="/" class="active"><span>🏠</span><small>Home</small></a>
+    <a href="/health/"><span>🩺</span><small>Health</small></a>
+    <a href="/schedule.html"><span>⏰</span><small>Schedule</small></a>
+    <a href="/habits/"><span>✅</span><small>Habits</small></a>
+    <a href="/profile.html"><span>👤</span><small>Profile</small></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/shared/supabase.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script>
+    (async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        document.getElementById('notLoggedIn').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('dashboard').classList.remove('hidden');
+      loadSnapshot(user.id);
+    })();
+
+    async function loadSnapshot(userId) {
+      const grid = document.getElementById('snapshotGrid');
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: bp } = await supabaseClient.from('bp_readings').select('*')
+        .eq('user_id', userId).order('reading_at', { ascending: false }).limit(1);
+      const { data: sugar } = await supabaseClient.from('sugar_readings').select('*')
+        .eq('user_id', userId).order('reading_at', { ascending: false }).limit(1);
+      const { data: weight } = await supabaseClient.from('weight_log').select('*')
+        .eq('user_id', userId).order('reading_at', { ascending: false }).limit(1);
+      const { data: water } = await supabaseClient.from('water_log').select('glasses')
+        .eq('user_id', userId).eq('log_date', today);
+
+      const totalWater = (water || []).reduce((s, r) => s + r.glasses, 0);
+
+      grid.innerHTML = `
+        <div class="snap-card">
+          <span class="snap-label">Blood Pressure</span>
+          <span class="snap-value">${bp?.[0] ? bp[0].systolic + '/' + bp[0].diastolic : '—'}</span>
+          <span class="snap-unit">mmHg</span>
+        </div>
+        <div class="snap-card">
+          <span class="snap-label">Blood Sugar</span>
+          <span class="snap-value">${sugar?.[0]?.value ?? '—'}</span>
+          <span class="snap-unit">${sugar?.[0]?.unit ?? 'mg/dL'}</span>
+        </div>
+        <div class="snap-card">
+          <span class="snap-label">Weight</span>
+          <span class="snap-value">${weight?.[0]?.weight_kg ?? '—'}</span>
+          <span class="snap-unit">kg</span>
+        </div>
+        <div class="snap-card">
+          <span class="snap-label">Water Today</span>
+          <span class="snap-value">${totalWater}</span>
+          <span class="snap-unit">/ 8 glasses</span>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
