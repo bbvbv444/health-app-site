@@ -8,13 +8,9 @@
   <style>
     #content { max-width: 400px; margin: 40px auto; padding: 20px; }
     h1 { text-align: center; margin-bottom: 20px; }
-    .toggle { text-align: center; margin-top: 16px; color: #9aa0a6; font-size: 14px; }
-    .toggle a { color: #4ade80; cursor: pointer; }
-    .error { color: #ef4444; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
-    input { width: 100%; padding: 12px; margin-bottom: 12px; background: #1a1d23; border: 1px solid #2a2e36; border-radius: 10px; color: #e8eaed; font-size: 15px; }
-    label { display: block; font-size: 13px; color: #9aa0a6; margin-bottom: 6px; }
-    button { width: 100%; padding: 12px; background: #4ade80; color: #000; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
-    body { background: #0f1115; color: #e8eaed; font-family: -apple-system, sans-serif; }
+    .toggle { text-align: center; margin-top: 16px; color: var(--muted); font-size: 14px; }
+    .toggle a { color: var(--accent); cursor: pointer; }
+    .error { color: var(--danger); font-size: 13px; margin-bottom: 12px; min-height: 18px; }
   </style>
 </head>
 <body>
@@ -37,6 +33,7 @@
   <script src="/shared/auth.js"></script>
   <script>
     let mode = 'signin';
+
     function toggleMode() {
       mode = mode === 'signin' ? 'signup' : 'signin';
       document.getElementById('title').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
@@ -44,15 +41,26 @@
       document.getElementById('toggleText').textContent = mode === 'signin' ? "Don't have an account?" : 'Already have an account?';
       document.getElementById('toggleLink').textContent = mode === 'signin' ? 'Sign up' : 'Sign in';
     }
+
     async function submit() {
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const errEl = document.getElementById('error');
       errEl.textContent = '';
-      if (!email || !password) { errEl.textContent = 'Enter email and password.'; return; }
+
+      if (!email || !password) {
+        errEl.textContent = 'Enter email and password.';
+        return;
+      }
+
       const fn = mode === 'signin' ? signIn : signUp;
       const { error } = await fn(email, password);
-      if (error) { errEl.textContent = error.message; return; }
+
+      if (error) {
+        errEl.textContent = error.message;
+        return;
+      }
+
       window.location.href = '/';
     }
   </script>
